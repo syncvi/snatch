@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use owo_colors::{colors::*, OwoColorize};
-use std::{env, error::Error, fs};
+use std::{env, error::Error, fs, process};
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Cli {
@@ -31,22 +31,10 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
             );
         }
     } else if let None = &cli.file {
-        let current_dir = env::current_dir()?;
-        let entries = fs::read_dir(current_dir)?;
-
-        entries
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                let file_name = entry.file_name().to_string_lossy().into_owned();
-                if file_name.contains(&cli.query) {
-                    Some(file_name)
-                } else {
-                    None
-                }
-            })
-            .for_each(|matching_file_name| {
-                println!("{}", matching_file_name.cyan());
-            });
+        if let Err(e) = dir_search(&cli.query) {
+            println!("Dir search fun error {e}");
+            process::exit(1);
+        }
     }
     Ok(())
 }
@@ -58,4 +46,23 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
         }
     }
     results
+}
+pub fn dir_search(query: &str) -> Result<(), Box<dyn Error>> {
+    let current_dir = env::current_dir()?;
+    let entries = fs::read_dir(current_dir)?;
+
+    entries
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let file_name = entry.file_name().to_string_lossy().into_owned();
+            if file_name.contains(query) {
+                Some(file_name)
+            } else {
+                None
+            }
+        })
+        .for_each(|matching_file_name| {
+            println!("{}", matching_file_name.cyan());
+        });
+    Ok(())
 }
