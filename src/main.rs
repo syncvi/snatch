@@ -1,7 +1,7 @@
 use std::process;
 
 use api::*;
-use clap::{Args, Parser, Subcommand};
+use clap::Parser;
 fn main() {
     let cli = api::Cli::parse();
     // dbg!(cli);

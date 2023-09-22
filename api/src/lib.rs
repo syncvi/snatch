@@ -1,5 +1,5 @@
-use clap::{Args, Parser, Subcommand};
-use owo_colors::{colors::*, OwoColorize};
+use clap::Parser;
+use owo_colors::OwoColorize;
 use std::{env, error::Error, fs, process};
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
