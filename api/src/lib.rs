@@ -29,7 +29,7 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
             println!("{}", highlighted_line);
         }
     } else if let None = &cli.file {
-        if let Err(e) = dir_search(&cli.query) {
+        if let Err(e) = dir_search(&cli.query, &cli.insensitive) {
             println!("Dir search fun error {e}");
             process::exit(1);
         }
@@ -44,14 +44,14 @@ pub fn search<'a>(query: &str, contents: &'a str, insensitive: &bool) -> Vec<&'a
                 results.push(line);
             }
         } else {
-            if line.contains(query) {
+            if line.contains(&query) {
                 results.push(line);
             }
         }
     }
     results
 }
-pub fn dir_search(query: &str) -> Result<(), Box<dyn Error>> {
+pub fn dir_search(query: &str, insensitive: &bool) -> Result<(), Box<dyn Error>> {
     let current_dir = env::current_dir()?;
     let entries = fs::read_dir(current_dir)?;
 
@@ -59,10 +59,18 @@ pub fn dir_search(query: &str) -> Result<(), Box<dyn Error>> {
         .filter_map(|entry| {
             let entry = entry.ok()?;
             let file_name = entry.file_name().to_string_lossy().into_owned();
-            if file_name.contains(query) {
-                Some(file_name)
+            if *insensitive {
+                if file_name.to_lowercase().contains(&query.to_lowercase()) {
+                    Some(file_name)
+                } else {
+                    None
+                }
             } else {
-                None
+                if file_name.contains(&query) {
+                    Some(file_name)
+                } else {
+                    None
+                }
             }
         })
         .for_each(|matching_file_name| {
