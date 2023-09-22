@@ -25,7 +25,10 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
     if let Some(file) = &cli.file {
         let contents = fs::read_to_string(file)?;
         for line in search(&cli.query, &contents) {
-            println!("{line}");
+            println!(
+                "{}",
+                line.replace(&cli.query, &cli.query.bright_green().to_string())
+            );
         }
     } else if let None = &cli.file {
         let current_dir = env::current_dir()?;
