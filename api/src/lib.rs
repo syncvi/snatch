@@ -1,4 +1,5 @@
 use clap::{Args, Parser, Subcommand};
+use owo_colors::{colors::*, OwoColorize};
 use std::{env, error::Error, fs};
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -41,7 +42,7 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
                 }
             })
             .for_each(|matching_file_name| {
-                println!("{}", matching_file_name);
+                println!("{}", matching_file_name.cyan());
             });
     }
     Ok(())
