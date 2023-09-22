@@ -10,7 +10,7 @@ pub struct Cli {
 
     /// File path for snatch to read
     #[arg(long, required = false)]
-    file: String,
+    file: Option<String>,
 
     /// Makes snatch case insensitive
     #[arg(short, long)]
@@ -22,12 +22,12 @@ pub struct Cli {
 }
 
 pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
-    if !&cli.file.is_empty() {
-        let contents = fs::read_to_string(&cli.file)?;
+    if let Some(file) = &cli.file {
+        let contents = fs::read_to_string(file)?;
         for line in search(&cli.query, &contents) {
             println!("{line}");
         }
-    } else if cli.file.is_empty() {
+    } else if let None = &cli.file {
         let current_dir = env::current_dir()?;
         let entries = fs::read_dir(current_dir)?;
 
