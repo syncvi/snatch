@@ -24,7 +24,7 @@ pub struct Cli {
 pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
     if let Some(file) = &cli.file {
         let contents = fs::read_to_string(file)?;
-        for line in search(&cli.query, &contents) {
+        for line in search(&cli.query, &contents, &cli.insensitive) {
             println!(
                 "{}",
                 line.replace(&cli.query, &cli.query.bright_green().to_string())
@@ -38,11 +38,17 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+pub fn search<'a>(query: &str, contents: &'a str, insensitive: &bool) -> Vec<&'a str> {
     let mut results = vec![];
     for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
+        if *insensitive {
+            if line.to_lowercase().contains(&query.to_lowercase()) {
+                results.push(line);
+            }
+        } else {
+            if line.contains(query) {
+                results.push(line);
+            }
         }
     }
     results
