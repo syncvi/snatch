@@ -30,7 +30,7 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
             let mut line = &line[..];
 
             while let Some(index) = line.to_lowercase().find(&query.to_lowercase()) {
-                // append the text before the match
+                // append the text all the way to match (non inclusive)
                 highlighted_line.push_str(&line[..index]);
 
                 // append the matched substring in its original case but highlighted
