@@ -25,25 +25,7 @@ pub fn run(cli: &Cli) -> Result<(), Box<dyn Error>> {
     if let Some(file) = &cli.file {
         let contents = fs::read_to_string(file)?;
         for line in search(&cli.query, &contents, &cli.insensitive) {
-            let query = &cli.query;
-            let mut highlighted_line = String::new();
-            let mut line = &line[..];
-
-            while let Some(index) = line.to_lowercase().find(&query.to_lowercase()) {
-                // append the text all the way to match (non inclusive)
-                highlighted_line.push_str(&line[..index]);
-
-                // append the matched substring in its original case but highlighted
-                let matched_query = &line[index..index + query.len()];
-                highlighted_line.push_str(&matched_query.bright_green().to_string());
-
-                // move the line cursor past the matched query
-                line = &line[index + query.len()..];
-            }
-
-            // append any remaining text
-            highlighted_line.push_str(line);
-
+            let highlighted_line = highlighter(&line, &cli.query);
             println!("{}", highlighted_line);
         }
     } else if let None = &cli.file {
@@ -87,4 +69,25 @@ pub fn dir_search(query: &str) -> Result<(), Box<dyn Error>> {
             println!("{}", matching_file_name.cyan());
         });
     Ok(())
+}
+pub fn highlighter(line: &str, query: &str) -> String {
+    let mut highlighted_line = String::new();
+    let mut line = &line[..];
+
+    while let Some(index) = line.to_lowercase().find(&query.to_lowercase()) {
+        // append the text all the way to match (non inclusive)
+        highlighted_line.push_str(&line[..index]);
+
+        // append the matched substring in its original case but highlighted
+        let matched_query = &line[index..index + query.len()];
+        highlighted_line.push_str(&matched_query.bright_green().to_string());
+
+        // move the line cursor past the matched query
+        line = &line[index + query.len()..];
+    }
+
+    // append any remaining text
+    highlighted_line.push_str(line);
+
+    highlighted_line
 }
