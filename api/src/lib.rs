@@ -77,14 +77,35 @@ fn searchp(query: &str, contents: &str, insensitive: &bool) -> Vec<String> {
     let chunk_size = (lines.len() + 3) / 4; // Divide into four roughly equal parts
 
     let query_arc = Arc::new(query.to_string());
-
     let results = Arc::new(Mutex::new(Vec::new()));
-
     let mut handles = vec![];
 
     if *insensitive {
-        // Spawn threads for case-insensitive search
-        for i in 0..4 {
+        handles.extend(spawn_case_insensitive_threads(
+            &lines, &query_arc, &results, chunk_size,
+        ));
+    } else {
+        handles.extend(spawn_case_sensitive_threads(
+            &lines, &query_arc, &results, chunk_size,
+        ));
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let results_lock = results.lock().unwrap();
+    results_lock.clone()
+}
+
+fn spawn_case_insensitive_threads(
+    lines: &[String],
+    query_arc: &Arc<String>,
+    results: &Arc<Mutex<Vec<String>>>,
+    chunk_size: usize,
+) -> Vec<thread::JoinHandle<()>> {
+    (0..4)
+        .map(|i| {
             let query_arc_clone = Arc::clone(&query_arc);
             let lines_chunk = lines
                 .iter()
@@ -94,7 +115,7 @@ fn searchp(query: &str, contents: &str, insensitive: &bool) -> Vec<String> {
                 .collect::<Vec<String>>();
             let results_clone = Arc::clone(&results);
 
-            let handle = thread::spawn(move || {
+            thread::spawn(move || {
                 let query = query_arc_clone.as_str();
                 let mut matching_lines = Vec::new();
 
@@ -106,13 +127,19 @@ fn searchp(query: &str, contents: &str, insensitive: &bool) -> Vec<String> {
 
                 let mut results_lock = results_clone.lock().unwrap();
                 results_lock.extend(matching_lines);
-            });
+            })
+        })
+        .collect()
+}
 
-            handles.push(handle);
-        }
-    } else {
-        // Spawn threads for case-sensitive search
-        for i in 0..4 {
+fn spawn_case_sensitive_threads(
+    lines: &[String],
+    query_arc: &Arc<String>,
+    results: &Arc<Mutex<Vec<String>>>,
+    chunk_size: usize,
+) -> Vec<thread::JoinHandle<()>> {
+    (0..4)
+        .map(|i| {
             let query_arc_clone = Arc::clone(&query_arc);
             let lines_chunk = lines
                 .iter()
@@ -122,7 +149,7 @@ fn searchp(query: &str, contents: &str, insensitive: &bool) -> Vec<String> {
                 .collect::<Vec<String>>();
             let results_clone = Arc::clone(&results);
 
-            let handle = thread::spawn(move || {
+            thread::spawn(move || {
                 let query = query_arc_clone.as_str();
                 let mut matching_lines = Vec::new();
 
@@ -134,18 +161,9 @@ fn searchp(query: &str, contents: &str, insensitive: &bool) -> Vec<String> {
 
                 let mut results_lock = results_clone.lock().unwrap();
                 results_lock.extend(matching_lines);
-            });
-
-            handles.push(handle);
-        }
-    }
-
-    for handle in handles {
-        handle.join().unwrap();
-    }
-
-    let results_lock = results.lock().unwrap();
-    results_lock.clone()
+            })
+        })
+        .collect()
 }
 
 pub fn dir_search(query: &str, insensitive: &bool) -> Result<(), Box<dyn Error>> {
